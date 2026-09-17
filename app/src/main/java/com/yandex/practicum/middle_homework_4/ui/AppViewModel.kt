@@ -6,6 +6,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.yandex.practicum.middle_homework_4.data.NewsRemoteMediator
@@ -16,6 +17,7 @@ import com.yandex.practicum.middle_homework_4.ui.contract.SettingsRepository
 import com.yandex.practicum.middle_homework_4.ui.contract.NewsService
 import com.yandex.practicum.middle_homework_4.ui.contract.WorkManagerService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppViewModel(
@@ -28,9 +30,14 @@ class AppViewModel(
 
     @OptIn(ExperimentalPagingApi::class)
     fun getNews(): Flow<PagingData<News>> =
-    // Допишите реализацию метода, используя класс Pager()
-    // Для реализации фабрики используйте newsDatabase
-    // Реализуйте NewsRemoteMediator() используя newsService и newsDatabase
+        Pager(
+            config = PagingConfig(
+                pageSize = PAGE_SIZE,
+                prefetchDistance = PREFETCH_DISTANCE
+            ),
+            pagingSourceFactory = { newsDatabase.getNewsDao().getNews() },
+            remoteMediator = NewsRemoteMediator(newsService, newsDatabase)
+        ).flow.cachedIn(viewModelScope)
 
     fun attachPagingItems(paging: LazyPagingItems<News>?) {
         pagingItems = paging
